@@ -2,6 +2,8 @@ import pytest
 
 from app import create_app
 from app.extensions import db as _db
+from app.models.agente import Agente
+from app.models.materia import Materia
 from app.models.usuario import Usuario
 
 
@@ -90,3 +92,26 @@ def auth_headers_estudiante(client, estudiante_user):
     )
     token = response.get_json()["data"]["token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def materia(app):
+    m = Materia(nombre="Física I", carrera="Ingeniería", semestre=1)
+    _db.session.add(m)
+    _db.session.commit()
+    return m
+
+
+@pytest.fixture
+def agente(app, docente_user, materia):
+    a = Agente(
+        nombre="Agente Física I",
+        descripcion="Mecánica clásica",
+        icono="🤖",
+        materia_id=materia.id,
+        docente_id=docente_user.id,
+        s3_prefix="fisica-i",
+    )
+    _db.session.add(a)
+    _db.session.commit()
+    return a
