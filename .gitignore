@@ -13,3 +13,5 @@ build/
 .coverage
 migrations/versions/
 *.db
+.ruff_cache/
+instance/
