@@ -1,0 +1,59 @@
+services:
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - agent-net
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: uniagent
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - agent-net
+  localstack:
+    image: localstack/localstack:4.4.0
+    ports:
+      - "4566:4566"
+    environment:
+      DEBUG: 1
+      DEFAULT_REGION: us-east-1
+      SERVICES: s3,sqs
+      PERSISTENCE: 1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "localstack_data:/var/lib/localstack"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s     # ← era 10s, ahora 40s
+    restart: unless-stopped
+    networks:
+      - agent-net
+
+networks:
+  agent-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  localstack_data:
