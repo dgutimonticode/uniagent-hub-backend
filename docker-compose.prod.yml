@@ -1,0 +1,20 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: uniagent-back:prod
+    container_name: uniagent-api-prod
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
