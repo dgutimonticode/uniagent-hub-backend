@@ -8,7 +8,7 @@ from app.extensions import cors, db, jwt, migrate
 
 def create_app(config_name: str | None = None) -> Flask:
     if config_name is None:
-        config_name = os.getenv("FLASK_ENV", "development")
+        config_name = os.getenv("APP_ENV") or os.getenv("FLASK_ENV", "development")
 
     app = Flask(__name__)
     app.config.from_object(config[config_name])
