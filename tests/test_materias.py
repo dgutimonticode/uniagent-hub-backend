@@ -13,9 +13,24 @@ def test_list_materias_publico_lista_vacia(client):
 def test_list_materias_publico_con_seed(client, app):
     with app.app_context():
         materias = [
-            Materia(nombre="Física I", carrera="Ingeniería en Sistemas", semestre=1, icono="⚛️"),
-            Materia(nombre="Cálculo I", carrera="Ingeniería en Sistemas", semestre=1, icono="📐"),
-            Materia(nombre="Física II", carrera="Ingeniería en Sistemas", semestre=2, icono="🌊"),
+            Materia(
+                nombre="Física I",
+                carrera="Ingeniería en Sistemas",
+                semestre=1,
+                icono="⚛️",
+            ),
+            Materia(
+                nombre="Cálculo I",
+                carrera="Ingeniería en Sistemas",
+                semestre=1,
+                icono="📐",
+            ),
+            Materia(
+                nombre="Física II",
+                carrera="Ingeniería en Sistemas",
+                semestre=2,
+                icono="🌊",
+            ),
             Materia(
                 nombre="Infraestructura, Plataformas Tecnológicas y Redes",
                 carrera="Ingeniería en Sistemas",
