@@ -1,14 +1,45 @@
-.venv/
-venv/
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.mypy_cache/
+
+# Virtualenvs
+venv/
+.venv/
+
+# Secrets / env
 .env
 .env.*
 !.env.example
+
+# VCS
 .git/
 .gitignore
-.pytest_cache/
+.gitattributes
+
+# IDEs / tooling
 .atl/
 .claude/
 .windsurf/
+.vscode/
+.idea/
+
+# Tests & docs (no van al runtime image)
+tests/
+docs/
+*.md
+!README.md
+
+# Build outputs
+dist/
+build/
+instance/
+
+# Local DB
+*.db
