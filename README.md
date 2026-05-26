@@ -4,7 +4,7 @@ Backend de UniAgent Hub. Plataforma universitaria de agentes IA.
 **Materia:** COM610 — Infraestructura, Plataformas Tecnológicas y Redes | USFX
 
 ## Stack
-Python 3.11 · Flask 3 · SQLAlchemy · JWT · MySQL 8 · AWS S3 · SQS · Docker
+Python 3.14 · Flask 3 · SQLAlchemy · JWT · MySQL 8 · AWS S3 · SQS · Docker
 
 ## Setup local
 ```bash
