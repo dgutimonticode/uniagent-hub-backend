@@ -44,12 +44,10 @@ services:
       - uniagent-net
 
   nginx:
-    image: nginx:stable
+    image: dgutimonti/uniagent-nginx:1.0.0
     container_name: uniagent-nginx
     ports:
       - "80:80"
-    volumes:
-      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - api
     networks:
