@@ -17,7 +17,14 @@ def create_app(config_name: str | None = None) -> Flask:
     migrate.init_app(app, db)
     from . import models  # noqa: F401
     jwt.init_app(app)
-    cors.init_app(app, origins=app.config["CORS_ORIGINS"])
+    # Configure CORS with explicit settings to allow Authorization header
+    # and credentials (useful when frontend sends Bearer tokens or cookies).
+    cors.init_app(
+        app,
+        origins=app.config["CORS_ORIGINS"],
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization"],
+    )
 
     from app.utils.responses import error_response
 
