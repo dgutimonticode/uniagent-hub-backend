@@ -38,41 +38,53 @@ source venv/bin/activate
 pytest
 ```
 
-## Producción (EC2)
+## Deploy en EC2
 
-Build de la imagen production-ready (multi-stage, gunicorn, usuario no-root):
-
-```bash
-docker build -t uniagent-back:prod .
-```
-
-Compose de producción (sin LocalStack, sin DB local — usa RDS y S3 reales):
+Stack completo en la instancia: API + MySQL containerizados, S3 real para skills. La DB corre en un volumen nombrado `uniagent-db-data` persistente en la EC2. boto3 usa el IAM Role de la instancia para S3 — sin credenciales en disco.
 
 ```bash
+# 1. SSH al EC2
+ssh ec2-user@<EC2_IP>
+
+# 2. Clonar el repo
+git clone <REPO_URL>
+cd uniagent-hub-backend
+
+# 3. Crear el archivo de variables de entorno
+cp .env.production.example .env.production
+
+# 4. Editar con valores reales
+nano .env.production
+
+# 5. Levantar los contenedores
 docker compose -f docker-compose.prod.yml up -d
+
+# 6. Aplicar migraciones
+docker compose -f docker-compose.prod.yml exec api flask db upgrade
+
+# 7. Seed inicial
+docker compose -f docker-compose.prod.yml exec api flask seed
 ```
 
 ### Variables de entorno requeridas en producción
 
+Ver `.env.production.example` para el template completo.
+
 | Variable | Descripción |
 |----------|-------------|
-| `APP_ENV` | Debe ser `production` |
+| `FLASK_ENV` | Debe ser `production` |
 | `SECRET_KEY` | Secret de Flask (mínimo 32 bytes). **Sin default — fail-fast si falta.** |
 | `JWT_SECRET_KEY` | Secret para firmar JWTs (mínimo 32 bytes). **Sin default — fail-fast si falta.** |
-| `JWT_ACCESS_TOKEN_EXPIRES_HOURS` | TTL del access token. Default: `24` |
-| `DATABASE_URL` | Connection string a RDS. Ej: `mysql+pymysql://user:pass@rds-host:3306/uniagent` |
-| `AWS_REGION` | Región AWS del bucket. Ej: `us-east-1` |
+| `DATABASE_URL` | `mysql+pymysql://uniagent_user:PASS@db:3306/uniagent` (`db` = nombre del servicio Docker) |
+| `MYSQL_ROOT_PASSWORD` | Password del root de MySQL |
+| `MYSQL_DATABASE` | Nombre de la base de datos (ej: `uniagent`) |
+| `MYSQL_USER` | Usuario de la app |
+| `MYSQL_PASSWORD` | Password del usuario de la app |
+| `AWS_REGION` | Región del bucket S3. Ej: `us-east-1` |
 | `AWS_S3_BUCKET` | Nombre del bucket. Ej: `uniagent-hub-skills-prod` |
-| `AWS_ACCESS_KEY_ID` | **Solo si NO usás IAM Instance Profile** (preferible omitir y usar el role) |
-| `AWS_SECRET_ACCESS_KEY` | Idem |
-| `SQS_SKILLS_QUEUE_URL` | URL completa de la cola SQS FIFO |
-| `CORS_ORIGINS` | Lista separada por coma de orígenes permitidos. Ej: `https://uniagent.miuni.edu` |
-| `AGENT_API_URL` | URL del agente IA on-premise |
-| `AGENT_HMAC_SECRET` | Secret para firmar requests al agente |
-| `CF_ACCESS_CLIENT_ID` | Cloudflare Access Service Token (ID) |
-| `CF_ACCESS_CLIENT_SECRET` | Cloudflare Access Service Token (Secret) |
+| `CORS_ORIGINS` | Orígenes permitidos separados por coma. Ej: `https://uniagent.miuni.edu` |
 
-> **Recomendación de seguridad:** en EC2 adjuntá un **IAM Instance Profile** con la policy mínima sobre el bucket en vez de manejar `AWS_ACCESS_KEY_ID`/`SECRET_ACCESS_KEY` en disco. boto3 los descubre automáticamente vía IMDSv2.
+> **Seguridad:** adjuntá un **IAM Instance Profile** a la EC2 con la policy mínima sobre el bucket. boto3 descubre las credenciales automáticamente vía IMDSv2 — no pongas `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` en `.env.production`.
 
 ## Docs
 Ver `/docs` del repo raíz para arquitectura completa.
