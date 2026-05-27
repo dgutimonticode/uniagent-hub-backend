@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.extensions import db
+from app.models.agente import Agente
+from app.models.materia import Materia
 from app.models.skill import Skill
 from app.services import skill_service
 from app.services.exceptions import S3ServiceError
@@ -32,6 +34,29 @@ def skill(app, agente):
     db.session.add(s)
     db.session.commit()
     return s
+
+
+@pytest.fixture
+def otra_materia(app):
+    m = Materia(nombre="Química I", carrera="Ingeniería", semestre=1)
+    db.session.add(m)
+    db.session.commit()
+    return m
+
+
+@pytest.fixture
+def otro_agente(app, docente_user, otra_materia):
+    a = Agente(
+        nombre="Otro Agente",
+        descripcion="Test",
+        icono="🤖",
+        materia_id=otra_materia.id,
+        docente_id=docente_user.id,
+        s3_prefix="otro-agente",
+    )
+    db.session.add(a)
+    db.session.commit()
+    return a
 
 
 def skills_url(agente_id: int, suffix: str = "") -> str:
@@ -77,6 +102,15 @@ class TestGetSkillDetail:
         assert response.status_code == 404
         assert response.get_json()["error"]["code"] == "SKILL_NOT_FOUND"
 
+    def test_404_skill_pertenece_a_otro_agente(
+        self, client, auth_headers_docente, agente, otro_agente, skill, mock_s3
+    ):
+        response = client.get(
+            skills_url(otro_agente.id, f"/{skill.id}"), headers=auth_headers_docente
+        )
+        assert response.status_code == 404
+        assert response.get_json()["error"]["code"] == "SKILL_NOT_FOUND"
+
 
 class TestDownloadSkill:
     def test_200_presigned_url(
@@ -91,6 +125,16 @@ class TestDownloadSkill:
         assert data["url"] == "https://example/presigned-url"
         assert data["expires_in"] == 900
         assert data["filename"] == "cinematica.md"
+
+    def test_404_skill_pertenece_a_otro_agente(
+        self, client, auth_headers_docente, agente, otro_agente, skill, mock_s3
+    ):
+        response = client.get(
+            skills_url(otro_agente.id, f"/{skill.id}/download"),
+            headers=auth_headers_docente,
+        )
+        assert response.status_code == 404
+        assert response.get_json()["error"]["code"] == "SKILL_NOT_FOUND"
 
 
 class TestCreateSkill:
@@ -187,6 +231,17 @@ class TestUpdateSkill:
         assert response.status_code == 404
         assert response.get_json()["error"]["code"] == "SKILL_NOT_FOUND"
 
+    def test_404_skill_pertenece_a_otro_agente(
+        self, client, auth_headers_docente, agente, otro_agente, skill, mock_s3
+    ):
+        response = client.put(
+            skills_url(otro_agente.id, f"/{skill.id}"),
+            headers=auth_headers_docente,
+            json={"descripcion": "Hack"},
+        )
+        assert response.status_code == 404
+        assert response.get_json()["error"]["code"] == "SKILL_NOT_FOUND"
+
 
 class TestDeleteSkill:
     def test_204_owner_elimina(
@@ -217,6 +272,16 @@ class TestDeleteSkill:
             headers=auth_headers_docente,
         )
         assert response.status_code == 404
+
+    def test_404_skill_pertenece_a_otro_agente(
+        self, client, auth_headers_docente, agente, otro_agente, skill, mock_s3
+    ):
+        response = client.delete(
+            skills_url(otro_agente.id, f"/{skill.id}"),
+            headers=auth_headers_docente,
+        )
+        assert response.status_code == 404
+        assert response.get_json()["error"]["code"] == "SKILL_NOT_FOUND"
 
 
 class TestS3ErrorPropagation:

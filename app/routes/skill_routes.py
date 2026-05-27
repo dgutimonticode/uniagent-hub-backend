@@ -62,6 +62,8 @@ def get_skill_detail(agente_id: int, id: int):
 
     try:
         skill = skill_service.get_by_id(id)
+        if skill.agente_id != agente_id:
+            return error_response("SKILL_NOT_FOUND", "Skill no existe", 404)
         contenido = skill_service.get_content(id)
     except SkillServiceError as err:
         return error_response(err.code, err.message, err.status)
@@ -80,6 +82,9 @@ def download_skill(agente_id: int, id: int):
         return agente_or_response
 
     try:
+        skill = skill_service.get_by_id(id)
+        if skill.agente_id != agente_id:
+            return error_response("SKILL_NOT_FOUND", "Skill no existe", 404)
         payload = skill_service.get_presigned_url(id, expiration=900)
     except SkillServiceError as err:
         return error_response(err.code, err.message, err.status)
@@ -123,6 +128,8 @@ def update_skill(agente_id: int, id: int):
 
     try:
         skill = skill_service.get_by_id(id)
+        if skill.agente_id != agente_id:
+            return error_response("SKILL_NOT_FOUND", "Skill no existe", 404)
         skill = skill_service.update(skill, data)
     except SkillServiceError as err:
         return error_response(err.code, err.message, err.status)
@@ -137,6 +144,8 @@ def update_skill(agente_id: int, id: int):
 def delete_skill(agente_id: int, id: int):
     try:
         skill = skill_service.get_by_id(id)
+        if skill.agente_id != agente_id:
+            return error_response("SKILL_NOT_FOUND", "Skill no existe", 404)
         skill_service.delete(skill)
     except SkillServiceError as err:
         return error_response(err.code, err.message, err.status)
