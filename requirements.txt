@@ -7,7 +7,7 @@ PyMySQL>=1.1,<2.0
 boto3>=1.34,<2.0
 bcrypt>=4.1,<5.0
 marshmallow>=3.21,<4.0
-gunicorn>=21.2,<22.0
+gunicorn>=23.0,<24.0
 python-dotenv>=1.0,<2.0
 pytest
 pytest-flask

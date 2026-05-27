@@ -38,9 +38,14 @@ def docente_required(fn: Callable[..., Any]) -> Callable[..., Any]:
 def agente_owner_required(fn: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(fn)
     @jwt_required()
-    def wrapper(id: int, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        # Prefer explicit agente_id (nested routes) over the generic id kwarg.
+        agente_id = kwargs.get("agente_id") or kwargs.get("id")
+        if agente_id is None:
+            return error_response("AGENT_NOT_FOUND", "Agente no existe", 404)
+
         user_id = int(get_jwt_identity())
-        agente = agente_repository.find_by_id(id)
+        agente = agente_repository.find_by_id(agente_id)
         if agente is None:
             return error_response("AGENT_NOT_FOUND", "Agente no existe", 404)
         if agente.docente_id != user_id:
@@ -50,6 +55,6 @@ def agente_owner_required(fn: Callable[..., Any]) -> Callable[..., Any]:
                 403,
             )
         g.agente = agente
-        return fn(id, *args, **kwargs)
+        return fn(*args, **kwargs)
 
     return wrapper

@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: uniagent-db-prod
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - uniagent-db-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - uniagent-net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: uniagent-back:prod
+    container_name: uniagent-api-prod
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.production
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - uniagent-net
+
+volumes:
+  uniagent-db-data:
+    driver: local
+
+networks:
+  uniagent-net:
+    driver: bridge

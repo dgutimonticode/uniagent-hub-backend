@@ -3,7 +3,9 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models.agente import Agente
 from app.models.materia import Materia
-from app.repositories import agente_repository
+from app.repositories import agente_repository, skill_repository
+from app.services.exceptions import S3ServiceError
+from app.services.s3_service import s3_service
 from app.utils.slugify import slugify
 
 
@@ -67,5 +69,16 @@ def update(agente: Agente, data: dict) -> Agente:
 
 
 def delete(agente: Agente) -> None:
-    # TODO ASL-14: borrar archivos S3 de cada skill y publicar evento SQS por skill
+    skills = skill_repository.find_by_agente(agente.id)
+    for skill in skills:
+        try:
+            s3_service.delete_file(skill.s3_key)
+        except S3ServiceError as err:
+            if err.code != "S3_NOT_FOUND":
+                raise
+
+    if skills:
+        skill_repository.delete_many(skills)
+
     agente_repository.delete(agente)
+    # TODO: publicar evento SQS para cada skill borrada (ASL futuro)
